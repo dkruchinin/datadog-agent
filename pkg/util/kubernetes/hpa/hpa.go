@@ -8,11 +8,13 @@
 package hpa
 
 import (
+	"strings"
 	"reflect"
 
 	autoscalingv2 "k8s.io/api/autoscaling/v2beta1"
 
 	"github.com/DataDog/datadog-agent/pkg/clusteragent/custommetrics"
+	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
@@ -28,7 +30,8 @@ func Inspect(hpa *autoscalingv2.HorizontalPodAutoscaler) (emList []custommetrics
 					Namespace: hpa.Namespace,
 					UID:       string(hpa.UID),
 				},
-				Labels: metricSpec.External.MetricSelector.MatchLabels,
+				Labels: sanitizeTags(metricSpec.External.MetricName,
+					metricSpec.External.MetricSelector.MatchLabels),
 			})
 		default:
 			log.Debugf("Unsupported metric type %s", metricSpec.Type)
@@ -71,4 +74,20 @@ func DiffExternalMetrics(informerList []*autoscalingv2.HorizontalPodAutoscaler, 
 // We only care about updates of the metrics or their scopes.
 func AutoscalerMetricsUpdate(new, old *autoscalingv2.HorizontalPodAutoscaler) bool {
 	return old.Annotations["kubectl.kubernetes.io/last-applied-configuration"] != new.Annotations["kubectl.kubernetes.io/last-applied-configuration"]
+}
+
+func sanitizeTags(metricName string, labels map[string]string) map[string]string {
+	metrics := config.Datadog.GetStringSlice("kubernets_metrics_requiring_sanitization")
+
+	for _, key := range metrics {
+		if key == metricName {
+			newLabels := make(map[string]string)
+			for k, v := range labels {
+				newLabels[k] = strings.Replace(v, ":", "_", -1)
+			}
+			return newLabels
+		}
+	}
+
+	return labels
 }

@@ -331,6 +331,9 @@ func initConfig(config Config) {
 	// Cluster check Autodiscovery
 	config.BindEnvAndSetDefault("cluster_checks.enabled", false)
 
+	// Kubernetes
+	config.BindEnvAndSetDefault("kubernets_metrics_requiring_sanitization", []string{})
+
 	setAssetFs(config)
 }
 

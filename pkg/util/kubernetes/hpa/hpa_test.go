@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/DataDog/datadog-agent/pkg/clusteragent/custommetrics"
+	"github.com/DataDog/datadog-agent/pkg/config"
 )
 
 func TestDiffAutoscalter(t *testing.T) {
@@ -193,6 +194,8 @@ func TestDiffAutoscalter(t *testing.T) {
 func TestInspect(t *testing.T) {
 	metricName := "requests_per_s"
 
+	config.Datadog.Set("kubernets_metrics_requiring_sanitization", []string{metricName})
+
 	testCases := map[string]struct {
 		hpa      *autoscalingv2.HorizontalPodAutoscaler
 		expected []custommetrics.ExternalMetricValue
@@ -207,7 +210,8 @@ func TestInspect(t *testing.T) {
 								MetricName: metricName,
 								MetricSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
-										"dcos_version": "1.9.4",
+										"dcos_version":    "1.9.4",
+										"tag_with_colons": "1:2:3",
 									},
 								},
 							},
@@ -218,7 +222,8 @@ func TestInspect(t *testing.T) {
 								MetricName: metricName,
 								MetricSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
-										"dcos_version": "2.1.9",
+										"dcos_version":    "2.1.9",
+										"tag_with_colons": "4:5:6",
 									},
 								},
 							},
@@ -229,14 +234,14 @@ func TestInspect(t *testing.T) {
 			[]custommetrics.ExternalMetricValue{
 				{
 					MetricName: "requests_per_s",
-					Labels:     map[string]string{"dcos_version": "1.9.4"},
+					Labels:     map[string]string{"dcos_version": "1.9.4", "tag_with_colons": "1_2_3"},
 					Timestamp:  0,
 					Value:      0,
 					Valid:      false,
 				},
 				{
 					MetricName: "requests_per_s",
-					Labels:     map[string]string{"dcos_version": "2.1.9"},
+					Labels:     map[string]string{"dcos_version": "2.1.9", "tag_with_colons": "4_5_6"},
 					Timestamp:  0,
 					Value:      0,
 					Valid:      false,
