@@ -224,10 +224,23 @@ func externalMetricValueKeyFunc(val ExternalMetricValue) string {
 	parts := []string{
 		"external_metric",
 		val.HPA.Namespace,
-		val.HPA.Name,
+		sanitizeMetricName(val.HPA.Name),
 		val.MetricName,
 	}
 	return strings.Join(parts, keyDelimeter)
+}
+
+func sanitizeMetricName(metricName string) string {
+	keysToSanitize := config.DataDog.GetStringSlice(
+		"keys_to_make_kubernetes_compatible"
+	)
+	for _, key := range(keysToSanitize) {
+		if (key == metricName) {
+			return strings.Replace(metricName, ":". "_", -1)
+		}
+	}
+
+	return metricName
 }
 
 func isExternalMetricValueKey(key string) bool {

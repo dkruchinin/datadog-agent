@@ -331,6 +331,11 @@ func initConfig(config Config) {
 	// Cluster check Autodiscovery
 	config.BindEnvAndSetDefault("cluster_checks.enabled", false)
 
+	config.BindEnvAndSetDefault(
+		"keys_to_make_kubernetes_compatible",
+		[]string{}
+	)
+
 	setAssetFs(config)
 }
 
